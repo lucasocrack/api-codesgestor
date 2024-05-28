@@ -20,7 +20,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "typeorm:ts": "typeorm-ts-node-esm",
     "migration:create": "npm run typeorm:ts migration:create -- ./typeorm/migrations/Migrate",
-    "migration:up": "npm run typeorm:ts migration:run -- "
+    "migration:up": "npm run typeorm:ts migration:run -- -d ./typeorm/data-source.ts",
+    "migration:down": "npm run typeorm:ts migration:revert -- -d ./typeorm/data-source.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
@@ -51,6 +52,7 @@
     "@types/supertest": "^6.0.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
+    "dotenv": "^16.4.5",
     "eslint": "^8.42.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",

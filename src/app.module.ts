@@ -9,7 +9,6 @@ import { FileModule } from './file/file.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import * as process from 'node:process';
 import { UserEntity } from './user/entity/user.entity';
-import { not } from 'rxjs/internal/util/not';
 
 @Module({
   imports: [
@@ -26,7 +25,7 @@ import { not } from 'rxjs/internal/util/not';
     TypeOrmModule.forRoot({
       type: 'mysql',
       host: process.env.DB_HOST,
-      port: parseInt(process.env.DB_PORT, 10),
+      port: parseInt(process.env.DB_PORT),
       username: process.env.DB_USER,
       password: process.env.DB_PASS,
       database: process.env.DB_NAME,
