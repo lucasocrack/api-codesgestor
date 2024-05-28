@@ -1,22 +1,23 @@
 import { Injectable } from '@nestjs/common';
 import { UnauthorizedException } from '@nestjs/common/exceptions/unauthorized.exception';
 import { JwtService } from '@nestjs/jwt';
-import { PrismaService } from '../prisma/prisma.service';
-import { user } from '.prisma/client';
 import { AuthRegisterDto } from './dto/auth-register.dto';
 import { UserService } from '../user/user.service';
 import * as bcrypt from 'bcrypt';
+import { InjectRepository } from '@nestjs/typeorm';
+import { UserEntity } from '../user/entity/user.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
-    private readonly prisma: PrismaService,
     private readonly userService: UserService,
+    @InjectRepository(UserEntity)
+    private userRepository: Repository<UserEntity>,
   ) {}
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  createToken(user: user) {
+  createToken(user: UserEntity) {
     return {
       access_token: this.jwtService.sign(
         {
@@ -56,10 +57,8 @@ export class AuthService {
   }
 
   async login(email: string, password: string) {
-    const user = await this.prisma.user.findFirst({
-      where: {
-        email,
-      },
+    const user = await this.userRepository.findOneBy({
+      email: String(email),
     });
 
     if (!user) {
@@ -72,35 +71,16 @@ export class AuthService {
   }
 
   async forget(email: string) {
-    const user = await this.prisma.user.findFirst({
-      where: {
-        email,
-      },
+    const user = await this.userRepository.findOneBy({
+      email,
     });
     if (!user) {
       throw new UnauthorizedException('Invalid email');
     }
-    // implementar envio de email
     return true;
-  }
-  async reset(password: string, token: string) {
-    // validar o token
-    // atualizar a senha
-    const id = 0;
-
-    const user = await this.prisma.user.update({
-      where: {
-        id,
-      },
-      data: {
-        password,
-      },
-    });
-    return this.createToken(user);
   }
 
   async register(data: AuthRegisterDto) {
     const user = await this.userService.create(data);
-    return this.createToken(user);
   }
 }

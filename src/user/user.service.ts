@@ -1,29 +1,46 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePutUserDto } from './dto/update-put-user.dto';
 import { UpdatePatchUserDto } from './dto/update-patch-user.dto';
 import * as bcrypt from 'bcrypt';
+import { Repository } from 'typeorm';
+import { UserEntity } from './entity/user.entity';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @InjectRepository(UserEntity)
+    private userRepository: Repository<UserEntity>,
+  ) {}
 
   async create(data: CreateUserDto) {
+    if (
+      await this.userRepository.exist({
+        where: {
+          email: data.email,
+        },
+      })
+    ) {
+      throw new BadRequestException('Email already exists');
+    }
     data.password = await bcrypt.hash(data.password, await bcrypt.genSalt());
-    return this.prisma.user.create({
-      data,
-    });
+    const user = this.userRepository.create(data);
+    this.userRepository.save(user);
   }
 
   async list() {
-    return this.prisma.user.findMany();
+    return this.userRepository.find();
   }
 
   async readOne(id: number) {
     await this.exists(id);
-    return this.prisma.user.findUnique({
-      where: { id },
+    return this.userRepository.findOneBy({
+      id,
     });
   }
 
@@ -34,18 +51,15 @@ export class UserService {
     await this.exists(id);
     password = await bcrypt.hash(password, await bcrypt.genSalt());
 
-    return this.prisma.user.update({
-      data: {
-        email,
-        name,
-        password,
-        birthAt: birthAt ? new Date(birthAt) : null,
-        role,
-      },
-      where: {
-        id: id,
-      },
+    await this.userRepository.update(id, {
+      email,
+      name,
+      password,
+      birthAt: birthAt ? new Date(birthAt) : null,
+      role,
     });
+
+    return this.readOne(id);
   }
 
   async updatePartial(
@@ -75,29 +89,25 @@ export class UserService {
       data.role = role;
     }
 
-    return this.prisma.user.update({
-      data,
-      where: { id },
-    });
+    await this.userRepository.update(id, data);
+    return this.readOne(id);
   }
 
   async delete(id: number) {
     await this.exists(id);
 
-    return this.prisma.user.delete({
-      where: { id },
-    });
+    return this.userRepository.delete(id);
   }
 
   async exists(id: number) {
     if (
-      !(await this.prisma.user.count({
+      !(await this.userRepository.exists({
         where: {
           id,
         },
       }))
     ) {
-      throw new NotFoundException(`O usuário ${id} não foi encontrado.`);
+      throw new NotFoundException('User not found');
     }
   }
 }

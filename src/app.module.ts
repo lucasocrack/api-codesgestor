@@ -6,6 +6,10 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { ConfigModule } from '@nestjs/config';
 import { FileModule } from './file/file.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import * as process from 'node:process';
+import { UserEntity } from './user/entity/user.entity';
+import { not } from 'rxjs/internal/util/not';
 
 @Module({
   imports: [
@@ -19,6 +23,17 @@ import { FileModule } from './file/file.module';
     forwardRef(() => UserModule),
     forwardRef(() => AuthModule),
     FileModule,
+    TypeOrmModule.forRoot({
+      type: 'mysql',
+      host: process.env.DB_HOST,
+      port: parseInt(process.env.DB_PORT, 10),
+      username: process.env.DB_USER,
+      password: process.env.DB_PASS,
+      database: process.env.DB_NAME,
+      autoLoadEntities: true,
+      synchronize: process.env.ENV === 'development',
+      entities: [UserEntity],
+    }),
   ],
   controllers: [AppController],
   providers: [
